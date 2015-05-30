@@ -100,6 +100,7 @@
             'src/win/atomicops-inl.h',
             'src/win/core.c',
             'src/win/detect-wakeup.c',
+            'src/win/device.c
             'src/win/dl.c',
             'src/win/error.c',
             'src/win/fs.c',
@@ -153,6 +154,7 @@
             'src/unix/async.c',
             'src/unix/atomic-ops.h',
             'src/unix/core.c',
+            'src/unix/device.c',
             'src/unix/dl.c',
             'src/unix/fs.c',
             'src/unix/getaddrinfo.c',

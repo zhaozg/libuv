@@ -54,6 +54,7 @@ TEST_DECLARE   (tty_large_write)
 #endif
 TEST_DECLARE   (tty_file)
 TEST_DECLARE   (tty_pty)
+TEST_DECLARE   (device_tun_echo)
 TEST_DECLARE   (stdio_over_pipes)
 TEST_DECLARE   (ip6_pton)
 TEST_DECLARE   (connect_unspecified)
@@ -469,6 +470,7 @@ TASK_LIST_START
 #endif
   TEST_ENTRY  (tty_file)
   TEST_ENTRY  (tty_pty)
+  TEST_ENTRY  (device_tun_echo)
   TEST_ENTRY  (stdio_over_pipes)
   TEST_ENTRY  (ip6_pton)
   TEST_ENTRY  (connect_unspecified)
