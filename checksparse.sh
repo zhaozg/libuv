@@ -92,6 +92,7 @@ test/test-condvar.c
 test/test-connection-fail.c
 test/test-cwd-and-chdir.c
 test/test-delayed-accept.c
+test/test-device-tun-echo.c
 test/test-dlerror.c
 test/test-embed.c
 test/test-env-vars.c

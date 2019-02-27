@@ -24,6 +24,7 @@
         'test-cwd-and-chdir.c',
         'test-default-loop-close.c',
         'test-delayed-accept.c',
+        'test-device-tun-echo.c',
         'test-eintr-handling.c',
         'test-error.c',
         'test-embed.c',
