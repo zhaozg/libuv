@@ -80,6 +80,10 @@ void uv_close(uv_handle_t* handle, uv_close_cb cb) {
       uv__tcp_close(loop, (uv_tcp_t*)handle);
       return;
 
+    case UV_DEVICE:
+      uv_device_close(loop, (uv_device_t*)handle);
+      return;
+
     case UV_NAMED_PIPE:
       uv__pipe_close(loop, (uv_pipe_t*) handle);
       return;

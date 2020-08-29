@@ -120,6 +120,12 @@ INLINE static void uv__insert_pending_req(uv_loop_t* loop, uv_req_t* req) {
                                       req);                                   \
         break;                                                                \
                                                                               \
+      case UV_DEVICE:                                                         \
+        uv__process_device_##method##_req(loop,                                \
+                                         (uv_device_t*) ((req)->handle_at),   \
+                                         req);                                \
+        break;                                                                \
+                                                                              \
       case UV_NAMED_PIPE:                                                     \
         uv__process_pipe_##method##_req(loop,                                 \
                                        (uv_pipe_t*) ((req)->handle_at),       \

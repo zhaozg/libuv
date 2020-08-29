@@ -109,6 +109,10 @@ INLINE static void uv__process_endgames(uv_loop_t* loop) {
         uv__tcp_endgame(loop, (uv_tcp_t*) handle);
         break;
 
+      case UV_DEVICE:
+        uv__device_endgame(loop, (uv_device_t*) handle);
+        break;
+
       case UV_NAMED_PIPE:
         uv__pipe_endgame(loop, (uv_pipe_t*) handle);
         break;
