@@ -304,7 +304,7 @@ typedef struct {
   struct uv__queue write_completed_queue;                                     \
 
 #define UV_PIPE_PRIVATE_FIELDS                                                \
-  const char* pipe_fname; /* strdup'ed */
+  const char* pipe_fname; /* NULL or strdup'ed */
 
 #define UV_POLL_PRIVATE_FIELDS                                                \
   uv__io_t io_watcher;
@@ -416,6 +416,8 @@ typedef struct {
 #elif defined(__linux__) && defined(__s390x__)
 # define UV_FS_O_DIRECT       0x04000
 #elif defined(__linux__) && defined(__x86_64__)
+# define UV_FS_O_DIRECT       0x04000
+#elif defined(__linux__) && defined(__loongarch__)
 # define UV_FS_O_DIRECT       0x04000
 #elif defined(O_DIRECT)
 # define UV_FS_O_DIRECT       O_DIRECT
