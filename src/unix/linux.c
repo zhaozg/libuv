@@ -431,8 +431,14 @@ static int uv__use_io_uring(void) {
   use = atomic_load_explicit(&use_io_uring, memory_order_relaxed);
 
   if (use == 0) {
+    /* Older kernels have a bug where the sqpoll thread uses 100% CPU. */
+    use = uv__kernel_version() >= /* 5.10.186 */ 0x050ABA ? 1 : -1;
+
+    /* But users can still enable it if they so desire. */
     val = getenv("UV_USE_IO_URING");
-    use = val == NULL || atoi(val) ? 1 : -1;
+    if (val != NULL)
+      use = atoi(val) ? 1 : -1;
+
     atomic_store_explicit(&use_io_uring, use, memory_order_relaxed);
   }
 
@@ -1718,7 +1724,8 @@ int uv_cpu_info(uv_cpu_info_t** ci, int* count) {
     return UV__ERR(errno);
   }
 
-  fgets(buf, sizeof(buf), fp);  /* Skip first line. */
+  if (NULL == fgets(buf, sizeof(buf), fp))
+    abort();
 
   for (;;) {
     memset(&t, 0, sizeof(t));
@@ -1729,7 +1736,8 @@ int uv_cpu_info(uv_cpu_info_t** ci, int* count) {
     if (n != 7)
       break;
 
-    fgets(buf, sizeof(buf), fp);  /* Skip rest of line. */
+    if (NULL == fgets(buf, sizeof(buf), fp))
+      abort();
 
     if (cpu >= ARRAY_SIZE(*cpus))
       continue;
@@ -1809,7 +1817,8 @@ nocpuinfo:
     if (fp == NULL)
       continue;
 
-    fscanf(fp, "%llu", &(*cpus)[cpu].freq);
+    if (1 != fscanf(fp, "%llu", &(*cpus)[cpu].freq))
+      abort();
     fclose(fp);
     fp = NULL;
   }
