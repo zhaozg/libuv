@@ -79,6 +79,8 @@
 #  define __NR_copy_file_range 379
 # elif defined(__arc__)
 #  define __NR_copy_file_range 285
+# elif defined(__riscv)
+#  define __NR_copy_file_range 285
 # endif
 #endif /* __NR_copy_file_range */
 
@@ -95,6 +97,8 @@
 #  define __NR_statx 383
 # elif defined(__s390__)
 #  define __NR_statx 379
+# elif defined(__riscv)
+#  define __NR_statx 291
 # endif
 #endif /* __NR_statx */
 
@@ -111,6 +115,8 @@
 #  define __NR_getrandom 359
 # elif defined(__s390__)
 #  define __NR_getrandom 349
+# elif defined(__riscv)
+#  define __NR_getrandom 278
 # endif
 #endif /* __NR_getrandom */
 
@@ -317,17 +323,64 @@ unsigned uv__kernel_version(void) {
   unsigned major;
   unsigned minor;
   unsigned patch;
+  char v_sig[256];
+  char* needle;
 
   version = atomic_load_explicit(&cached_version, memory_order_relaxed);
   if (version != 0)
     return version;
 
+  /* Check /proc/version_signature first as it's the way to get the mainline
+   * kernel version in Ubuntu. The format is:
+   *   Ubuntu ubuntu_kernel_version mainline_kernel_version
+   * For example:
+   *   Ubuntu 5.15.0-79.86-generic 5.15.111
+   */
+  if (0 == uv__slurp("/proc/version_signature", v_sig, sizeof(v_sig)))
+    if (3 == sscanf(v_sig, "Ubuntu %*s %u.%u.%u", &major, &minor, &patch))
+      goto calculate_version;
+
   if (-1 == uname(&u))
     return 0;
+
+  /* In Debian we need to check `version` instead of `release` to extract the
+   * mainline kernel version. This is an example of how it looks like:
+   *  #1 SMP Debian 5.10.46-4 (2021-08-03)
+   */
+  needle = strstr(u.version, "Debian ");
+  if (needle != NULL)
+    if (3 == sscanf(needle, "Debian %u.%u.%u", &major, &minor, &patch))
+      goto calculate_version;
 
   if (3 != sscanf(u.release, "%u.%u.%u", &major, &minor, &patch))
     return 0;
 
+  /* Handle it when the process runs under the UNAME26 personality:
+   *
+   * - kernels >= 3.x identify as 2.6.40+x
+   * - kernels >= 4.x identify as 2.6.60+x
+   *
+   * UNAME26 is a poorly conceived hack that doesn't let us distinguish
+   * between 4.x kernels and 5.x/6.x kernels so we conservatively assume
+   * that 2.6.60+x means 4.x.
+   *
+   * Fun fact of the day: it's technically possible to observe the actual
+   * kernel version for a brief moment because uname() first copies out the
+   * real release string before overwriting it with the backcompat string.
+   */
+  if (major == 2 && minor == 6) {
+    if (patch >= 60) {
+      major = 4;
+      minor = patch - 60;
+      patch = 0;
+    } else if (patch >= 40) {
+      major = 3;
+      minor = patch - 40;
+      patch = 0;
+    }
+  }
+
+calculate_version:
   version = major * 65536 + minor * 256 + patch;
   atomic_store_explicit(&cached_version, version, memory_order_relaxed);
 
@@ -762,7 +815,9 @@ static void uv__iou_submit(struct uv__iou* iou) {
 int uv__iou_fs_close(uv_loop_t* loop, uv_fs_t* req) {
   struct uv__io_uring_sqe* sqe;
   struct uv__iou* iou;
+  int kv;
 
+  kv = uv__kernel_version();
   /* Work around a poorly understood bug in older kernels where closing a file
    * descriptor pointing to /foo/bar results in ETXTBSY errors when trying to
    * execve("/foo/bar") later on. The bug seems to have been fixed somewhere
@@ -770,9 +825,16 @@ int uv__iou_fs_close(uv_loop_t* loop, uv_fs_t* req) {
    * but good candidates are the several data race fixes. Interestingly, it
    * seems to manifest only when running under Docker so the possibility of
    * a Docker bug can't be completely ruled out either. Yay, computers.
+   * Also, disable on non-longterm versions between 5.16.0 (non-longterm) and
+   * 6.1.0 (longterm). Starting with longterm 6.1.x, the issue seems to be
+   * solved.
    */
-  if (uv__kernel_version() < /* 5.15.90 */ 0x050F5A)
+  if (kv < /* 5.15.90 */ 0x050F5A)
     return 0;
+
+  if (kv >= /* 5.16.0 */ 0x050A00 && kv < /* 6.1.0 */ 0x060100)
+    return 0;
+
 
   iou = &uv__get_internal_fields(loop)->iou;
 
@@ -1370,40 +1432,19 @@ void uv__io_poll(uv_loop_t* loop, int timeout) {
      */
     SAVE_ERRNO(uv__update_time(loop));
 
-    if (nfds == 0) {
+    if (nfds == -1)
+      assert(errno == EINTR);
+    else if (nfds == 0)
+      /* Unlimited timeout should only return with events or signal. */
       assert(timeout != -1);
 
+    if (nfds == 0 || nfds == -1) {
       if (reset_timeout != 0) {
         timeout = user_timeout;
         reset_timeout = 0;
+      } else if (nfds == 0) {
+        return;
       }
-
-      if (timeout == -1)
-        continue;
-
-      if (timeout == 0)
-        break;
-
-      /* We may have been inside the system call for longer than |timeout|
-       * milliseconds so we need to update the timestamp to avoid drift.
-       */
-      goto update_timeout;
-    }
-
-    if (nfds == -1) {
-      if (errno != EINTR)
-        abort();
-
-      if (reset_timeout != 0) {
-        timeout = user_timeout;
-        reset_timeout = 0;
-      }
-
-      if (timeout == -1)
-        continue;
-
-      if (timeout == 0)
-        break;
 
       /* Interrupted by a signal. Update timeout and poll again. */
       goto update_timeout;
@@ -1515,13 +1556,13 @@ void uv__io_poll(uv_loop_t* loop, int timeout) {
       break;
     }
 
+update_timeout:
     if (timeout == 0)
       break;
 
     if (timeout == -1)
       continue;
 
-update_timeout:
     assert(timeout > 0);
 
     real_timeout -= (loop->time - base);
