@@ -30,12 +30,8 @@
 #include <sys/types.h>
 #include <sys/socket.h>
 
-#if defined(__PASE__)
-#include <as400_protos.h>
-#define ifaddrs ifaddrs_pase
-#define getifaddrs Qp2getifaddrs
-#define freeifaddrs Qp2freeifaddrs
-#else
+/* ifaddrs is not implemented on AIX and IBM i PASE */
+#if !defined(_AIX)
 #include <ifaddrs.h>
 #endif
 
@@ -224,6 +220,10 @@ static int uv__is_ipv6_link_local(const struct sockaddr* addr) {
 
 
 static int uv__ipv6_link_local_scope_id(void) {
+/* disable link local on AIX & PASE for now */
+#if defined(_AIX)
+  return 0;
+#else
   struct sockaddr_in6* a6;
   struct ifaddrs* ifa;
   struct ifaddrs* p;
@@ -233,8 +233,9 @@ static int uv__ipv6_link_local_scope_id(void) {
     return 0;
 
   for (p = ifa; p != NULL; p = p->ifa_next)
-    if (uv__is_ipv6_link_local(p->ifa_addr))
-      break;
+    if (p->ifa_addr != NULL)
+      if (uv__is_ipv6_link_local(p->ifa_addr))
+        break;
 
   rv = 0;
   if (p != NULL) {
@@ -244,6 +245,7 @@ static int uv__ipv6_link_local_scope_id(void) {
 
   freeifaddrs(ifa);
   return rv;
+#endif
 }
 
 
