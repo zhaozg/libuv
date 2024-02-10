@@ -463,6 +463,9 @@ static int uv__use_io_uring(void) {
 #elif defined(__arm__) && __SIZEOF_POINTER__ == 4
   /* See https://github.com/libuv/libuv/issues/4158. */
   return 0;  /* All 32 bits kernels appear buggy. */
+#elif defined(__powerpc64__) || defined(__ppc64__)
+  /* See https://github.com/libuv/libuv/issues/4283. */
+  return 0; /* Random SIGSEGV in signal handler. */
 #else
   /* Ternary: unknown=0, yes=1, no=-1 */
   static _Atomic int use_io_uring;
@@ -1154,6 +1157,12 @@ static void uv__poll_io_uring(uv_loop_t* loop, struct uv__iou* iou) {
 
     uv__req_unregister(loop, req);
     iou->in_flight--;
+
+    /* If the op is not supported by the kernel retry using the thread pool */
+    if (e->res == -EOPNOTSUPP) {
+      uv__fs_post(loop, req);
+      continue;
+    }
 
     /* io_uring stores error codes as negative numbers, same as libuv. */
     req->result = e->res;
