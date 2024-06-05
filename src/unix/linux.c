@@ -1632,12 +1632,12 @@ int uv_resident_set_memory(size_t* rss) {
   long val;
   int rc;
   int i;
-  
+
   /* rss: 24th element */
   rc = uv__slurp("/proc/self/stat", buf, sizeof(buf));
   if (rc < 0)
     return rc;
-    
+
   /* find the last ')' */
   s = strrchr(buf, ')');
   if (s == NULL)
@@ -1660,6 +1660,10 @@ int uv_resident_set_memory(size_t* rss) {
 err:
   return UV_EINVAL;
 }
+
+#ifndef CLOCK_BOOTTIME
+#define CLOCK_BOOTTIME 7
+#endif
 
 int uv_uptime(double* uptime) {
   struct timespec now;
@@ -2256,7 +2260,7 @@ uint64_t uv_get_available_memory(void) {
 }
 
 
-static int uv__get_cgroupv2_constrained_cpu(const char* cgroup, 
+static int uv__get_cgroupv2_constrained_cpu(const char* cgroup,
                                             uv__cpu_constraint* constraint) {
   char path[256];
   char buf[1024];
@@ -2267,7 +2271,7 @@ static int uv__get_cgroupv2_constrained_cpu(const char* cgroup,
 
   if (strncmp(cgroup, "0::/", 4) != 0)
     return UV_EINVAL;
-   
+
   /* Trim ending \n by replacing it with a 0 */
   cgroup_trimmed = cgroup + sizeof("0::/") - 1;      /* Skip the prefix "0::/" */
   cgroup_size = (int)strcspn(cgroup_trimmed, "\n");  /* Find the first slash */
@@ -2319,7 +2323,7 @@ static char* uv__cgroup1_find_cpu_controller(const char* cgroup,
   return cgroup_cpu;
 }
 
-static int uv__get_cgroupv1_constrained_cpu(const char* cgroup, 
+static int uv__get_cgroupv1_constrained_cpu(const char* cgroup,
                                             uv__cpu_constraint* constraint) {
   char path[256];
   char buf[1024];
@@ -2337,8 +2341,8 @@ static int uv__get_cgroupv1_constrained_cpu(const char* cgroup,
            cgroup_size, cgroup_cpu);
 
   if (uv__slurp(path, buf, sizeof(buf)) < 0)
-    return UV_EIO;  
-    
+    return UV_EIO;
+
   if (sscanf(buf, "%lld", &constraint->quota_per_period) != 1)
     return UV_EINVAL;
 
@@ -2360,7 +2364,7 @@ static int uv__get_cgroupv1_constrained_cpu(const char* cgroup,
   /* Read cpu.shares */
   if (uv__slurp(path, buf, sizeof(buf)) < 0)
     return UV_EIO;
-  
+
   if (sscanf(buf, "%u", &shares) != 1)
     return UV_EINVAL;
 
