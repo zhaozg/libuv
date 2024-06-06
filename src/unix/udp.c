@@ -366,9 +366,21 @@ write_queue_drain:
     h[pkts].msg_hdr.msg_iovlen = req->nbufs;
   }
 
-  do
+  do {
+#if (__GLIBC__ > 2 || (__GLIBC__ == 2 && __GLIBC_MINOR__ >= 17))
     npkts = sendmmsg(handle->io_watcher.fd, h, pkts, 0);
-  while (npkts == -1 && errno == EINTR);
+#else
+    int i;
+    ssize_t sz;
+    for (i=0, sz = 0; i < pkts, sz != -1; i++)
+    {
+      do
+        sz = sendmsg(handle->io_watcher.fd, &h[i], 0);
+      while (sz == -1 && errno == EINTR);
+    }
+    npkts = sz == -1 ? sz : i;
+#endif
+  } while (npkts == -1 && errno == EINTR);
 
   if (npkts < 1) {
     if (errno == EAGAIN || errno == EWOULDBLOCK || errno == ENOBUFS)
