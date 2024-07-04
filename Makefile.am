@@ -276,6 +276,7 @@ test_run_tests_SOURCES = test/blackhole-server.c \
                          test/test-tcp-flags.c \
                          test/test-tcp-open.c \
                          test/test-tcp-read-stop.c \
+                         test/test-tcp-reuseport.c \
                          test/test-tcp-read-stop-start.c \
                          test/test-tcp-rst.c \
                          test/test-tcp-shutdown-after-write.c \
@@ -325,6 +326,7 @@ test_run_tests_SOURCES = test/blackhole-server.c \
                          test/test-udp-send-unreachable.c \
                          test/test-udp-try-send.c \
                          test/test-udp-recv-in-a-row.c \
+                         test/test-udp-reuseport.c \
                          test/test-uname.c \
                          test/test-walk-handles.c \
                          test/test-watcher-cross-stop.c

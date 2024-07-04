@@ -292,6 +292,12 @@ static int uv__tcp_try_bind(uv_tcp_t* handle,
   DWORD err;
   int r;
 
+  /* There is no SO_REUSEPORT on Windows, Windows only knows SO_REUSEADDR.
+   * so we just return an error directly when UV_TCP_REUSEPORT is requested
+   * for binding the socket. */
+  if (flags & UV_TCP_REUSEPORT)
+    return ERROR_NOT_SUPPORTED;
+
   if (handle->socket == INVALID_SOCKET) {
     SOCKET sock;
 
@@ -1557,11 +1563,6 @@ int uv__tcp_connect(uv_connect_t* req,
   return 0;
 }
 
-#ifndef WSA_FLAG_NO_HANDLE_INHERIT
-/* Added in Windows 7 SP1. Specify this to avoid race conditions, */
-/* but also manually clear the inherit flag in case this failed. */
-#define WSA_FLAG_NO_HANDLE_INHERIT 0x80
-#endif
 
 int uv_socketpair(int type, int protocol, uv_os_sock_t fds[2], int flags0, int flags1) {
   SOCKET server = INVALID_SOCKET;
