@@ -274,7 +274,7 @@ if(CMAKE_SYSTEM_NAME STREQUAL "Android")
        src/unix/random-sysctl-linux.c)
 endif()
 
-if(APPLE OR CMAKE_SYSTEM_NAME MATCHES "Android|Linux")
+if(APPLE OR CMAKE_SYSTEM_NAME MATCHES "Android|Linux|OHOS")
   list(APPEND uv_sources src/unix/proctitle.c)
 endif()
 
@@ -318,7 +318,7 @@ if(CMAKE_SYSTEM_NAME STREQUAL "GNU")
        src/unix/hurd.c)
 endif()
 
-if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
+if(CMAKE_SYSTEM_NAME MATCHES "Linux|OHOS")
   list(APPEND uv_defines _GNU_SOURCE _POSIX_C_SOURCE=200112)
   list(APPEND uv_libraries dl rt)
   list(APPEND uv_sources
@@ -427,7 +427,7 @@ if(CMAKE_SYSTEM_NAME STREQUAL "QNX")
   list(APPEND uv_libraries socket)
 endif()
 
-if(APPLE OR CMAKE_SYSTEM_NAME MATCHES "DragonFly|FreeBSD|Linux|NetBSD|OpenBSD")
+if(APPLE OR CMAKE_SYSTEM_NAME MATCHES "DragonFly|FreeBSD|Linux|NetBSD|OpenBSD|OHOS")
   list(APPEND uv_test_libraries util)
 endif()
 
