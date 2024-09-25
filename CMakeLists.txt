@@ -320,6 +320,9 @@ endif()
 
 if(CMAKE_SYSTEM_NAME MATCHES "Linux|OHOS")
   list(APPEND uv_defines _GNU_SOURCE _POSIX_C_SOURCE=200112)
+  if(CMAKE_SYSTEM_NAME STREQUAL "OHOS")
+    list(APPEND uv_defines __OHOS__)
+  endif()
   list(APPEND uv_libraries dl rt)
   list(APPEND uv_sources
        src/unix/linux.c

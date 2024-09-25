@@ -468,7 +468,11 @@ uv__fs_copy_file_range(int fd_in,
 #endif
 
 #if defined(__linux__) || (defined(__FreeBSD__) && __FreeBSD_version >= 1301000)
+#if !defined(__OHOS__)
 #define UV__CPU_AFFINITY_SUPPORTED 1
+#else
+#define UV__CPU_AFFINITY_SUPPORTED 0
+#endif
 #else
 #define UV__CPU_AFFINITY_SUPPORTED 0
 #endif
