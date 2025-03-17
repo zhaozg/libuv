@@ -55,6 +55,11 @@
 #include <sys/utsname.h>
 #include <time.h>
 #include <unistd.h>
+#if defined(__ANDROID__)
+#ifndef LLONG_MAX
+#define LLONG_MAX 0x7FFFFFFFFFFFFFFFLL
+#endif
+#endif
 
 #ifndef __NR_io_uring_setup
 # define __NR_io_uring_setup 425
