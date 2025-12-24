@@ -307,7 +307,7 @@ void uv__io_poll(uv_loop_t* loop, int timeout) {
         have_signals = 1;
       } else {
         uv__metrics_update_idle_time(loop);
-        w->cb(loop, w, pe->portev_events);
+        uv__io_cb(loop, w, pe->portev_events);
       }
 
       nevents++;
@@ -329,7 +329,7 @@ void uv__io_poll(uv_loop_t* loop, int timeout) {
 
     if (have_signals != 0) {
       uv__metrics_update_idle_time(loop);
-      loop->signal_io_watcher.cb(loop, &loop->signal_io_watcher, POLLIN);
+      uv__signal_event(loop, &loop->signal_io_watcher, POLLIN);
     }
 
     loop->watchers[loop->nwatchers] = NULL;
@@ -446,9 +446,7 @@ static int uv__fs_event_rearm(uv_fs_event_t *handle) {
 }
 
 
-static void uv__fs_event_read(uv_loop_t* loop,
-                              uv__io_t* w,
-                              unsigned int revents) {
+void uv__fs_event_read(uv_loop_t* loop, uv__io_t* w, unsigned int revents) {
   uv_fs_event_t *handle = NULL;
   timespec_t timeout;
   port_event_t pe;
@@ -548,7 +546,7 @@ int uv_fs_event_start(uv_fs_event_t* handle,
   if (first_run) {
     err = uv__io_init_start(handle->loop,
                              &handle->loop->fs_event_watcher,
-                             uv__fs_event_read,
+                             UV__FS_EVENT_READ,
                              portfd,
                              POLLIN);
     if (err)
@@ -897,11 +895,6 @@ int uv_interface_addresses(uv_interface_address_t** addresses, int* count) {
   return 0;
 }
 #endif  /* SUNOS_NO_IFADDRS */
-
-void uv_free_interface_addresses(uv_interface_address_t* addresses,
-                                 int count) {
-  uv__free(addresses);
-}
 
 
 #if !defined(_POSIX_VERSION) || _POSIX_VERSION < 200809L

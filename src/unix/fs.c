@@ -211,7 +211,8 @@ static ssize_t uv__fs_fdatasync(uv_fs_t* req) {
     || defined(__NetBSD__)                                                    \
     || defined(__OpenBSD__)                                                   \
     || defined(__linux__)                                                     \
-    || defined(__sun)
+    || defined(__sun)                                                         \
+    || defined(__QNX__)
 static struct timespec uv__fs_to_timespec(double time) {
   struct timespec ts;
 
@@ -222,13 +223,6 @@ static struct timespec uv__fs_to_timespec(double time) {
 
   ts.tv_sec  = time;
   ts.tv_nsec = (time - ts.tv_sec) * 1e9;
-
- /* TODO(bnoordhuis) Remove this. utimesat() has nanosecond resolution but we
-  * stick to microsecond resolution for the sake of consistency with other
-  * platforms. I'm the original author of this compatibility hack but I'm
-  * less convinced it's useful nowadays.
-  */
-  ts.tv_nsec -= ts.tv_nsec % 1000;
 
   if (ts.tv_nsec < 0) {
     ts.tv_nsec += 1e9;
@@ -248,7 +242,8 @@ static ssize_t uv__fs_futime(uv_fs_t* req) {
     || defined(__NetBSD__)                                                    \
     || defined(__OpenBSD__)                                                   \
     || defined(__linux__)                                                     \
-    || defined(__sun)
+    || defined(__sun)                                                         \
+    || defined(__QNX__)
   struct timespec ts[2];
   ts[0] = uv__fs_to_timespec(req->atime);
   ts[1] = uv__fs_to_timespec(req->mtime);
@@ -1147,7 +1142,8 @@ static ssize_t uv__fs_utime(uv_fs_t* req) {
     || defined(__NetBSD__)                                                    \
     || defined(__OpenBSD__)                                                   \
     || defined(__linux__)                                                     \
-    || defined(__sun)
+    || defined(__sun)                                                         \
+    || defined(__QNX__)
   struct timespec ts[2];
   ts[0] = uv__fs_to_timespec(req->atime);
   ts[1] = uv__fs_to_timespec(req->mtime);
@@ -1181,7 +1177,8 @@ static ssize_t uv__fs_lutime(uv_fs_t* req) {
     || defined(__NetBSD__)                                                    \
     || defined(__OpenBSD__)                                                   \
     || defined(__linux__)                                                     \
-    || defined(__sun)
+    || defined(__sun)                                                         \
+    || defined(__QNX__)
   struct timespec ts[2];
   ts[0] = uv__fs_to_timespec(req->atime);
   ts[1] = uv__fs_to_timespec(req->mtime);
