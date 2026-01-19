@@ -250,6 +250,32 @@ static int fs__readlink_handle(HANDLE handle,
       }
     }
 
+  } else if (reparse_data->ReparseTag == IO_REPARSE_TAG_LX_SYMLINK) {
+    /* Real (Linux) symlink */
+    char* buffer;
+    char* target;
+    size_t target_len;
+
+    target_len = (reparse_data->ReparseDataLength -
+                  sizeof(ULONG)); /* Version field */
+    buffer = (char*) reparse_data->LinuxSymbolicLinkReparseBuffer.PathBuffer;
+
+    if (target_len_ptr != NULL) {
+      *target_len_ptr = target_len;
+    }
+
+    if (target_ptr != NULL) {
+      assert(*target_ptr == NULL);
+      target = uv__malloc(target_len + 1);
+      if (target == NULL) {
+        return UV_ENOMEM;
+      }
+      memcpy(target, buffer, target_len);
+      target[target_len] = '\0';
+      *target_ptr = target;
+    }
+    return 0;
+
   } else if (reparse_data->ReparseTag == IO_REPARSE_TAG_MOUNT_POINT) {
     /* Junction. */
     w_target = reparse_data->MountPointReparseBuffer.PathBuffer +
@@ -3157,6 +3183,7 @@ retry_get_full_path_name:
 
   stat_fs->f_type = 0;
   stat_fs->f_bsize = bytes_per_sector * sectors_per_cluster;
+  stat_fs->f_frsize = bytes_per_sector * sectors_per_cluster;
   stat_fs->f_blocks = total_clusters;
   stat_fs->f_bfree = free_clusters;
   stat_fs->f_bavail = free_clusters;

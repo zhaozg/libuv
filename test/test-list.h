@@ -77,6 +77,7 @@ TEST_DECLARE   (tty_escape_sequence_processing)
 #endif
 TEST_DECLARE   (tty_file)
 TEST_DECLARE   (tty_pty)
+TEST_DECLARE   (tty_pty_partial)
 TEST_DECLARE   (stdio_over_pipes)
 TEST_DECLARE   (stdio_emulate_iocp)
 TEST_DECLARE   (ip6_pton)
@@ -385,6 +386,7 @@ TEST_FS_DECLARE   (fs_symlink_dir)
 #ifdef _WIN32
 TEST_FS_DECLARE   (fs_symlink_junction)
 TEST_FS_DECLARE   (fs_non_symlink_reparse_point)
+TEST_FS_DECLARE   (fs_readlink_lx_symlink)
 TEST_FS_DECLARE   (fs_lstat_windows_store_apps)
 TEST_FS_DECLARE   (fs_open_flags)
 #endif
@@ -664,6 +666,7 @@ TASK_LIST_START
 #endif
   TEST_ENTRY  (tty_file)
   TEST_ENTRY  (tty_pty)
+  TEST_ENTRY  (tty_pty_partial)
   TEST_ENTRY  (stdio_over_pipes)
   TEST_ENTRY  (stdio_emulate_iocp)
   TEST_ENTRY  (ip6_pton)
@@ -1113,6 +1116,7 @@ TASK_LIST_START
 #ifdef _WIN32
   TEST_FS_ENTRY  (fs_symlink_junction)
   TEST_FS_ENTRY  (fs_non_symlink_reparse_point)
+  TEST_FS_ENTRY  (fs_readlink_lx_symlink)
   TEST_FS_ENTRY  (fs_lstat_windows_store_apps)
   TEST_FS_ENTRY  (fs_open_flags)
 #endif
